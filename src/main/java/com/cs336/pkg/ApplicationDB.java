@@ -16,7 +16,7 @@ public class ApplicationDB {
         String dbPort = "3306";
         String dbName = "group62_db";
         String dbUser = "root";
-        String dbPass = "1234";
+        String dbPass = "1234"; //-> Please change this if your MySQL password differs
 
         String jdbcUrl = "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName
                 + "?useSSL=false&serverTimezone=UTC";

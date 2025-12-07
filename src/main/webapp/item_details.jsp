@@ -1,3 +1,4 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.cs336.pkg.*, java.sql.*" %>
 <%
     String idStr = request.getParameter("id");
@@ -44,6 +45,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Item Details</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -62,7 +64,7 @@
         <tr valign="top">
             <!-- Left Column: Item Details -->
             <td width="50%" class="detail-section">
-                <h3>📋 Item Details</h3>
+                <h3>Item Details</h3>
                 <ul>
                     <li><b>Type:</b> <%= currentType %></li>
                     <li><b>Brand:</b> <%= currentBrand %></li>
@@ -76,7 +78,7 @@
             
             <!-- Right Column: Bidding Section -->
             <td width="50%" class="bid-section <%= "Active".equals(status) ? "" : "bid-closed" %>">
-                <h3>💰 Bidding Status: <%= status %></h3>
+                <h3>Bidding Status: <%= status %></h3>
                 <div class="price">Current Price: $<%= currentPrice %></div>
                 
                 <% if("Active".equals(status)) { %>
@@ -119,7 +121,7 @@
     <hr>
     
     <!-- Bid History Table -->
-    <h3>📊 Bid History</h3>
+    <h3> Bid History</h3>
     <table border="1" cellpadding="8" cellspacing="0" width="100%">
         <tr style="background-color:#f5f5f5;">
             <th>Bidder</th>
@@ -158,7 +160,7 @@
     <hr>
     
     <!-- Similar Items (Sold in Last 30 Days) -->
-    <h3>🔍 Similar Items Sold Recently (Past 30 Days)</h3>
+    <h3>Similar Items Sold Recently (Past 30 Days)</h3>
     <p style="color:#666; font-size:0.9em;">
         View auction history of similar items to help you decide your bid.
     </p>
