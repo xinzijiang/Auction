@@ -1,0 +1,101 @@
+<%@ page import="com.cs336.pkg.*, java.sql.*, java.util.*" %>
+<%
+    // ========================================================================
+    // BACKGROUND JOB: Auto-Settle Expired Auctions
+    // This file is included in browse.jsp to simulate a background task
+    // Checklist Requirements:
+    // - Check if closing time has come
+    // - Check if seller set a reserve price
+    // - If yes: if reserve > last bid, no winner
+    // - If no reserve OR bid >= reserve: highest bidder wins
+    // - Alert the winner
+    // ========================================================================
+
+    ApplicationDB dbAuto = new ApplicationDB();
+    Connection connAuto = dbAuto.getConnection();
+    
+    try {
+        // 1. Find all Active auctions that have passed their EndTime
+        String sqlAuto = "SELECT * FROM Auction WHERE status='Active' AND endTime < NOW()";
+        Statement stmtAuto = connAuto.createStatement();
+        ResultSet rsAuto = stmtAuto.executeQuery(sqlAuto);
+        
+        // Store auction IDs to avoid "ResultSet closed" errors during update
+        List<Integer> auctionsToProcess = new ArrayList<>();
+        
+        while(rsAuto.next()) {
+            auctionsToProcess.add(rsAuto.getInt("auctionID"));
+        }
+        rsAuto.close();
+        stmtAuto.close();
+
+        // 2. Process each expired auction
+        for (int auctionID : auctionsToProcess) {
+            
+            // Re-fetch auction details safely
+            PreparedStatement psGet = connAuto.prepareStatement(
+                "SELECT reservePrice, title FROM Auction WHERE auctionID=?"
+            );
+            psGet.setInt(1, auctionID);
+            ResultSet rsAuc = psGet.executeQuery();
+            
+            if (rsAuc.next()) {
+                float reservePrice = rsAuc.getFloat("reservePrice");
+                String title = rsAuc.getString("title");
+                
+                // 3. Find the highest bidder for this auction
+                PreparedStatement psBid = connAuto.prepareStatement(
+                    "SELECT userID, amount FROM Bid WHERE auctionID=? ORDER BY amount DESC LIMIT 1"
+                );
+                psBid.setInt(1, auctionID);
+                ResultSet rsBid = psBid.executeQuery();
+                
+                String newStatus = "Closed"; // Default: auction closed without sale
+                
+                if (rsBid.next()) {
+                    float highestBid = rsBid.getFloat("amount");
+                    int winnerID = rsBid.getInt("userID");
+                    
+                    // Checklist: "if yes: if the reserve is higher than the last bid none is the winner"
+                    if (highestBid >= reservePrice) {
+                        // Reserve price met or no reserve: declare winner
+                        newStatus = "Sold";
+                        
+                        // Alert the Winner
+                        String msg = "Congratulations! You won the auction for '" + title 
+                                   + "' with a bid of $" + highestBid;
+                        PreparedStatement psAlert = connAuto.prepareStatement(
+                            "INSERT INTO Alert (userID, message) VALUES (?, ?)"
+                        );
+                        psAlert.setInt(1, winnerID);
+                        psAlert.setString(2, msg);
+                        psAlert.executeUpdate();
+                        psAlert.close();
+                    } else {
+                        // Reserve price NOT met: no winner
+                        newStatus = "Closed";
+                    }
+                }
+                rsBid.close();
+                psBid.close();
+                
+                // 4. Update Auction Status
+                PreparedStatement psUpdate = connAuto.prepareStatement(
+                    "UPDATE Auction SET status=? WHERE auctionID=?"
+                );
+                psUpdate.setString(1, newStatus);
+                psUpdate.setInt(2, auctionID);
+                psUpdate.executeUpdate();
+                psUpdate.close();
+            }
+            rsAuc.close();
+            psGet.close();
+        }
+        
+    } catch (Exception e) {
+        // Silent failure in background task to avoid disrupting user browsing
+        e.printStackTrace();
+    } finally {
+        dbAuto.closeConnection(connAuto);
+    }
+%>
