@@ -2,7 +2,6 @@
 <%
     // ========================================================================
     // BACKGROUND JOB: Auto-Settle Expired Auctions
-    // This file is included in browse.jsp to simulate a background task
     // Checklist Requirements:
     // - Check if closing time has come
     // - Check if seller set a reserve price
@@ -53,6 +52,7 @@
                 String newStatus = "Closed"; // Default: auction closed without sale
                 
                 if (rsBid.next()) {
+                    // Case A: There is at least one bid
                     float highestBid = rsBid.getFloat("amount");
                     int winnerID = rsBid.getInt("userID");
                     
@@ -75,7 +75,11 @@
                         // Reserve price NOT met: no winner
                         newStatus = "Closed";
                     }
+                } else {
+                    // Case B: No bids were placed at all (FIXED: This was missing)
+                    newStatus = "Closed";
                 }
+                
                 rsBid.close();
                 psBid.close();
                 

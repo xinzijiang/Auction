@@ -28,7 +28,18 @@
     float currentPrice = rsItem.getFloat("currentPrice");
     float increment = rsItem.getFloat("increment");
     String status = rsItem.getString("status");
-    float minBid = currentPrice + increment;
+    
+    // Determine if there are existing bids to compute correct minimum required bid
+    PreparedStatement psCount = conn.prepareStatement("SELECT COUNT(*) FROM Bid WHERE auctionID=?");
+    psCount.setInt(1, auctionID);
+    ResultSet rsCount = psCount.executeQuery();
+    rsCount.next();
+    int bidCount = rsCount.getInt(1);
+    rsCount.close();
+    psCount.close();
+    
+    // If no bids yet, minimum is the start price; otherwise current price + increment
+    float minBid = (bidCount == 0) ? currentPrice : (currentPrice + increment);
 %>
 <!DOCTYPE html>
 <html>
@@ -129,7 +140,8 @@
                 String bidderName = rsHist.getString("username");
         %>
             <tr>
-                <!-- Added Link to User History to satisfy checklist requirement -->
+                <!-- Checklist Requirement: View list of auctions a specific buyer has participated in -->
+                <!-- Added Link to user_history.jsp -->
                 <td><a href="user_history.jsp?usernameLookup=<%= bidderName %>"><%= bidderName %></a></td>
                 <td>$<%= rsHist.getFloat("amount") %></td>
                 <td><%= rsHist.getTimestamp("bidTime") %></td>
